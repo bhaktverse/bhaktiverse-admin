@@ -67,7 +67,7 @@ export const AdminUserManagement = () => {
     }
   };
 
-  const getUserStats = (userId) => {
+  const getUserStats = (userId: string) => {
     const userActivities = activities.filter(activity => activity.user_id === userId);
     const userSessions = sessions.filter(session => session.user_id === userId);
     
@@ -83,11 +83,11 @@ export const AdminUserManagement = () => {
     };
   };
 
-  const getSpiritualLevel = (points) => {
-    if (points >= 1000) return { level: "Advanced", color: "default" };
-    if (points >= 500) return { level: "Intermediate", color: "secondary" };
-    if (points >= 100) return { level: "Beginner+", color: "outline" };
-    return { level: "Beginner", color: "outline" };
+  const getSpiritualLevel = (points: number) => {
+    if (points >= 1000) return { level: "Advanced", color: "default" as const };
+    if (points >= 500) return { level: "Intermediate", color: "secondary" as const };
+    if (points >= 100) return { level: "Beginner+", color: "outline" as const };
+    return { level: "Beginner", color: "outline" as const };
   };
 
   const filteredUsers = users.filter(user =>

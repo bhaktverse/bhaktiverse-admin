@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 export const AdminDataImport = () => {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [selectedTable, setSelectedTable] = useState("");
+  const [selectedTable, setSelectedTable] = useState<string>("");
   const [csvData, setCsvData] = useState("");
   const [jsonData, setJsonData] = useState("");
   const [bulkData, setBulkData] = useState("");
@@ -117,7 +117,7 @@ export const AdminDataImport = () => {
         const batch = records.slice(i, i + batchSize);
         
         const { error } = await supabase
-          .from(selectedTable)
+          .from(selectedTable as any)
           .insert(batch);
 
         if (error) throw error;
@@ -145,7 +145,7 @@ export const AdminDataImport = () => {
     }
   };
 
-  const generateSampleData = (table) => {
+  const generateSampleData = (table: string) => {
     const samples = {
       saints: `name,tradition,biography,key_teachings,primary_language
 Guru Nanak,Sikhism,Founder of Sikhism,Unity of God and equality of all people,hi
@@ -167,7 +167,7 @@ Morning Mantra,Gayatri Mantra chanting,mantra,prayer,hi`
     return samples[table] || "No sample data available for this table";
   };
 
-  const exportTableData = async (tableName) => {
+  const exportTableData = async (tableName: string) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
