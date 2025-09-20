@@ -14,6 +14,7 @@ import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
 import { AdminUserManagement } from "@/components/admin/AdminUserManagement";
 import { AdminDataImport } from "@/components/admin/AdminDataImport";
 import { AdminAITools } from "@/components/admin/AdminAITools";
+import { AdminDatabaseAI } from "@/components/admin/AdminDatabaseAI";
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -29,7 +30,7 @@ const Admin = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:grid-cols-12">
+          <TabsList className="grid w-full grid-cols-6 lg:grid-cols-13">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -41,6 +42,10 @@ const Admin = () => {
             <TabsTrigger value="saints" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
               <span className="hidden sm:inline">Saints</span>
+            </TabsTrigger>
+            <TabsTrigger value="database-ai" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              <span className="hidden sm:inline">AI DB</span>
             </TabsTrigger>
             <TabsTrigger value="scriptures" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
@@ -90,6 +95,10 @@ const Admin = () => {
 
           <TabsContent value="saints" className="space-y-6">
             <AdminSaints />
+          </TabsContent>
+
+          <TabsContent value="database-ai" className="space-y-6">
+            <AdminDatabaseAI />
           </TabsContent>
 
           <TabsContent value="scriptures" className="space-y-6">
