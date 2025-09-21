@@ -43,19 +43,38 @@ export const AdminDatabaseAI = () => {
 
     setLoading(true);
     try {
-      // Mock AI generation - in real implementation, this would call OpenAI API
-      const mockData = generateMockDataForTable(selectedTable, aiPrompt);
-      setGeneratedData(mockData);
+      console.log('Generating AI data for table:', selectedTable);
+      
+      const { data, error } = await supabase.functions.invoke('ai-content-generator', {
+        body: {
+          prompt: aiPrompt,
+          table: selectedTable,
+          targetCount: 5
+        }
+      });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(error.message || 'Failed to invoke AI function');
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'AI generation failed');
+      }
+
+      // Format the generated data as JSON string for display
+      const formattedData = JSON.stringify(data.data, null, 2);
+      setGeneratedData(formattedData);
       
       toast({
         title: "Success",
-        description: "AI data generated successfully",
+        description: `Generated ${data.count} records using AI`,
       });
     } catch (error) {
       console.error('Error generating AI data:', error);
       toast({
         title: "Error",
-        description: "Failed to generate AI data",
+        description: error.message || "Failed to generate AI data",
         variant: "destructive"
       });
     } finally {
@@ -122,42 +141,46 @@ export const AdminDatabaseAI = () => {
 
     setLoading(true);
     try {
-      // Mock video processing - in real implementation, this would extract audio and process with AI
-      const mockVideoData = `Video Analysis Results for: ${videoUrl}
+      console.log('Processing video:', videoUrl);
+      
+      const { data, error } = await supabase.functions.invoke('video-processor', {
+        body: {
+          videoUrl: videoUrl,
+          processingType: 'comprehensive'
+        }
+      });
 
-Key Topics Discussed:
-- Spiritual awakening and meditation
-- Devotional practices (Bhakti)
-- Life teachings and wisdom
-- Prayer and mantras
+      if (error) {
+        console.error('Video processing error:', error);
+        throw new Error(error.message || 'Failed to process video');
+      }
 
-Extracted FAQ Data:
-Q: How to start meditation?
-A: Begin with 5-10 minutes daily, focus on breath, find quiet space.
+      if (!data?.success) {
+        throw new Error(data?.error || 'Video processing failed');
+      }
 
-Q: What is the importance of devotion?
-A: Devotion purifies the heart and creates connection with divine.
+      // Format the analysis and structured data for display
+      const formattedData = `Video Analysis Results for: ${videoUrl}
 
-Q: How to maintain spiritual practice?
-A: Consistency, dedication, and gradual progress are key.
+AI Analysis:
+${data.analysis}
 
-Generated Content Chunks:
-1. Meditation techniques and benefits
-2. Devotional singing and its impact
-3. Daily spiritual routines
-4. Community worship practices`;
+Extracted Structured Data:
+${JSON.stringify(data.extractedData, null, 2)}
 
-      setVideoData(mockVideoData);
+Generated at: ${data.timestamp}`;
+
+      setVideoData(formattedData);
       
       toast({
         title: "Success",
-        description: "Video processed successfully",
+        description: "Video processed successfully with AI analysis",
       });
     } catch (error) {
       console.error('Error processing video:', error);
       toast({
         title: "Error",
-        description: "Failed to process video",
+        description: error.message || "Failed to process video",
         variant: "destructive"
       });
     } finally {
