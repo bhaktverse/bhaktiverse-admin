@@ -38,3 +38,15 @@ verify_jwt = false
 
 [functions.bulk-data-operations]
 verify_jwt = false
+
+[functions.enhanced-data-fetcher]
+verify_jwt = false
+
+[functions.smart-qa-system]
+verify_jwt = false
+
+[functions.audio-generator]
+verify_jwt = false
+
+[functions.language-manager]
+verify_jwt = false
