@@ -1,28 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/components/ui/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  Database, 
-  Globe, 
-  Volume2, 
-  MessageSquare, 
-  Download, 
-  RefreshCw, 
+import { Slider } from "@/components/ui/slider";
+import {
+  Database,
+  MessageSquare,
+  Volume2,
+  Download,
   CheckCircle,
   Loader2,
   Languages,
   Brain,
   Sparkles
 } from "lucide-react";
+
+interface Language {
+  code: string;
+  name: string;
+  nativeName: string;
+}
+
+interface Voice {
+  voice_id: string;
+  name: string;
+  gender?: string;
+  style?: string;
+}
+
+interface Question {
+  id: string;
+  category: string;
+  question: string;
+}
 
 const AdminEnhancedDataManager = () => {
   const { toast } = useToast();
@@ -36,7 +54,7 @@ const AdminEnhancedDataManager = () => {
   
   // Q&A System State
   const [qaCategory, setQaCategory] = useState('');
-  const [predefinedQuestions, setPredefinedQuestions] = useState([]);
+  const [predefinedQuestions, setPredefinedQuestions] = useState<Question[]>([]);
   const [selectedQuestion, setSelectedQuestion] = useState('');
   const [customQuestion, setCustomQuestion] = useState('');
   const [generatedAnswer, setGeneratedAnswer] = useState('');
@@ -45,13 +63,13 @@ const AdminEnhancedDataManager = () => {
   // Audio State
   const [audioText, setAudioText] = useState('');
   const [selectedVoice, setSelectedVoice] = useState('alloy');
-  const [availableVoices, setAvailableVoices] = useState({});
+  const [availableVoices, setAvailableVoices] = useState<Voice[]>([]);
   
   // Language State
   const [translateText, setTranslateText] = useState('');
   const [sourceLanguage, setSourceLanguage] = useState('en');
   const [targetLanguage, setTargetLanguage] = useState('hi');
-  const [supportedLanguages, setSupportedLanguages] = useState({});
+  const [supportedLanguages, setSupportedLanguages] = useState<Language[]>([]);
   
   const tables = [
     { value: 'saints', label: 'Saints', icon: '🕉️' },
@@ -74,36 +92,42 @@ const AdminEnhancedDataManager = () => {
       });
       
       if (qaResponse.data?.success) {
-        setPredefinedQuestions(qaResponse.data.questions);
+        setPredefinedQuestions(qaResponse.data.questions || []);
       }
 
       // Load available voices
-      const voiceResponse = await supabase.functions.invoke('audio-generator', {
+      const voicesResponse = await supabase.functions.invoke('audio-generator', {
         body: { operation: 'get_voices' }
       });
       
-      if (voiceResponse.data?.success) {
-        setAvailableVoices(voiceResponse.data.voices);
+      if (voicesResponse.data?.success) {
+        setAvailableVoices(voicesResponse.data.voices || []);
       }
 
       // Load supported languages
-      const langResponse = await supabase.functions.invoke('language-manager', {
+      const languagesResponse = await supabase.functions.invoke('language-manager', {
         body: { operation: 'get_languages' }
       });
       
-      if (langResponse.data?.success) {
-        setSupportedLanguages(langResponse.data.languages);
+      if (languagesResponse.data?.success) {
+        setSupportedLanguages(languagesResponse.data.languages || []);
       }
+
     } catch (error) {
       console.error('Error loading initial data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load initial data",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleEnhancedDataFetch = async () => {
+  const handleDataFetch = async () => {
     if (!selectedTable) {
       toast({
         title: "Error",
-        description: "Please select a table first",
+        description: "Please select a table to enhance",
         variant: "destructive",
       });
       return;
@@ -111,7 +135,7 @@ const AdminEnhancedDataManager = () => {
 
     setLoading(true);
     setProgress(0);
-
+    
     try {
       const progressInterval = setInterval(() => {
         setProgress(prev => Math.min(prev + 10, 90));
@@ -121,7 +145,7 @@ const AdminEnhancedDataManager = () => {
         body: {
           operation: 'fetch_data',
           table: selectedTable,
-          count: parseInt(fetchCount),
+          count: fetchCount,
           language: fetchLanguage
         }
       });
@@ -135,143 +159,75 @@ const AdminEnhancedDataManager = () => {
           description: `Generated and inserted ${response.data.insertedCount} ${selectedTable} records`,
         });
       } else {
-        throw new Error(response.data?.error || 'Unknown error');
+        throw new Error(response.data?.error || 'Failed to fetch data');
       }
     } catch (error) {
+      console.error('Data fetch error:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Failed to fetch data',
         variant: "destructive",
       });
     } finally {
       setLoading(false);
-      setProgress(0);
+      setTimeout(() => setProgress(0), 2000);
     }
   };
 
-  const handleQuestionSelect = async (question) => {
-    setSelectedQuestion(question);
-    setLoading(true);
+  const handleQuestionGeneration = async () => {
+    const question = selectedQuestion || customQuestion;
+    if (!question.trim()) {
+      toast({
+        title: "Error",
+        description: "Please select or enter a question",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    setLoading(true);
+    setProgress(0);
+    
     try {
+      const progressInterval = setInterval(() => {
+        setProgress(prev => Math.min(prev + 15, 90));
+      }, 300);
+
       const response = await supabase.functions.invoke('smart-qa-system', {
         body: {
           operation: 'generate_answer',
           question: question,
-          category: qaCategory,
-          language: qaLanguage
+          language: qaLanguage,
+          save_to_db: true
         }
       });
 
-      if (response.data?.success) {
-        setGeneratedAnswer(response.data.qaEntry.answer);
-      } else {
-        throw new Error(response.data?.error || 'Failed to generate answer');
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCustomQuestion = async () => {
-    if (!customQuestion.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a question",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const response = await supabase.functions.invoke('smart-qa-system', {
-        body: {
-          operation: 'generate_answer',
-          question: customQuestion,
-          category: qaCategory,
-          language: qaLanguage
-        }
-      });
+      clearInterval(progressInterval);
+      setProgress(100);
 
       if (response.data?.success) {
-        setGeneratedAnswer(response.data.qaEntry.answer);
-        setSelectedQuestion(customQuestion);
-      } else {
-        throw new Error(response.data?.error || 'Failed to generate answer');
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSaveQA = async () => {
-    if (!selectedQuestion || !generatedAnswer) {
-      toast({
-        title: "Error",
-        description: "No Q&A to save",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const qaData = {
-        question: selectedQuestion,
-        answer: generatedAnswer,
-        category: qaCategory || 'philosophical',
-        difficulty_level: 'intermediate',
-        language: qaLanguage,
-        source_references: [],
-        ai_generated: true,
-        verified_by_scholar: false
-      };
-
-      const response = await supabase.functions.invoke('smart-qa-system', {
-        body: {
-          operation: 'save_qa',
-          qaData: qaData
-        }
-      });
-
-      if (response.data?.success) {
+        setGeneratedAnswer(response.data.answer);
         toast({
           title: "Success",
-          description: "Q&A saved to database successfully",
+          description: "Answer generated and saved to database",
         });
-        setSelectedQuestion('');
-        setGeneratedAnswer('');
-        setCustomQuestion('');
       } else {
-        throw new Error(response.data?.error || 'Failed to save Q&A');
+        throw new Error(response.data?.error || 'Failed to generate answer');
       }
     } catch (error) {
+      console.error('Q&A generation error:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Failed to generate answer',
         variant: "destructive",
       });
     } finally {
       setLoading(false);
+      setTimeout(() => setProgress(0), 2000);
     }
   };
 
-  const handleGenerateAudio = async () => {
+  const handleAudioGeneration = async () => {
     if (!audioText.trim()) {
       toast({
         title: "Error",
@@ -283,18 +239,18 @@ const AdminEnhancedDataManager = () => {
 
     setLoading(true);
     setProgress(0);
-
+    
     try {
       const progressInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + 15, 90));
-      }, 1000);
+        setProgress(prev => Math.min(prev + 20, 90));
+      }, 400);
 
       const response = await supabase.functions.invoke('audio-generator', {
         body: {
           operation: 'generate_audio',
           text: audioText,
           voice: selectedVoice,
-          language: fetchLanguage
+          format: 'mp3'
         }
       });
 
@@ -302,81 +258,150 @@ const AdminEnhancedDataManager = () => {
       setProgress(100);
 
       if (response.data?.success) {
-        // Create audio element and play
-        const audioData = response.data.audioData;
-        const audio = new Audio(`data:audio/mp3;base64,${audioData}`);
-        audio.play();
+        // Create download link
+        const blob = new Blob([response.data.audioData], { type: 'audio/mp3' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `generated-audio-${Date.now()}.mp3`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
 
         toast({
           title: "Success",
-          description: `Audio generated successfully with ${response.data.chunks} chunk(s)`,
+          description: "Audio generated and download started",
         });
       } else {
-        throw new Error(response.data?.error || 'Audio generation failed');
+        throw new Error(response.data?.error || 'Failed to generate audio');
       }
     } catch (error) {
+      console.error('Audio generation error:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Failed to generate audio',
         variant: "destructive",
       });
     } finally {
       setLoading(false);
-      setProgress(0);
+      setTimeout(() => setProgress(0), 2000);
     }
   };
 
-  const handleTranslate = async () => {
-    if (!translateText.trim() || !targetLanguage) {
+  const handleTranslation = async () => {
+    if (!translateText.trim()) {
       toast({
         title: "Error",
-        description: "Please enter text and select target language",
+        description: "Please enter text to translate",
         variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
-
+    setProgress(0);
+    
     try {
+      const progressInterval = setInterval(() => {
+        setProgress(prev => Math.min(prev + 25, 90));
+      }, 200);
+
       const response = await supabase.functions.invoke('language-manager', {
         body: {
           operation: 'translate',
           text: translateText,
-          sourceLanguage: sourceLanguage,
-          targetLanguage: targetLanguage
+          source_language: sourceLanguage,
+          target_language: targetLanguage
         }
       });
 
+      clearInterval(progressInterval);
+      setProgress(100);
+
       if (response.data?.success) {
         toast({
-          title: "Translation Complete",
-          description: `Translated from ${supportedLanguages[sourceLanguage]?.name} to ${supportedLanguages[targetLanguage]?.name}`,
+          title: "Success",
+          description: "Translation completed successfully",
         });
-        console.log('Translation:', response.data.translatedText);
       } else {
-        throw new Error(response.data?.error || 'Translation failed');
+        throw new Error(response.data?.error || 'Failed to translate text');
       }
     } catch (error) {
+      console.error('Translation error:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Failed to translate text',
         variant: "destructive",
       });
     } finally {
       setLoading(false);
+      setTimeout(() => setProgress(0), 2000);
     }
   };
 
+  const categories = Array.from(new Set(predefinedQuestions.map(q => q.category)));
+  const filteredQuestions = qaCategory 
+    ? predefinedQuestions.filter(q => q.category === qaCategory)
+    : predefinedQuestions;
+
+  const voices = [
+    { voice_id: 'alloy', name: 'Alloy' },
+    { voice_id: 'echo', name: 'Echo' },
+    { voice_id: 'fable', name: 'Fable' },
+    { voice_id: 'onyx', name: 'Onyx' },
+    { voice_id: 'nova', name: 'Nova' },
+    { voice_id: 'shimmer', name: 'Shimmer' },
+    ...availableVoices
+  ];
+
+  const languages = [
+    { code: 'en', name: 'English', nativeName: 'English' },
+    { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी' },
+    { code: 'te', name: 'Telugu', nativeName: 'తెలుగు' },
+    { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்' },
+    { code: 'bn', name: 'Bengali', nativeName: 'বাংলা' },
+    { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી' },
+    { code: 'mr', name: 'Marathi', nativeName: 'मराठी' },
+    { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ' },
+    { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം' },
+    { code: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ' },
+    { code: 'or', name: 'Odia', nativeName: 'ଓଡ଼ିଆ' },
+    { code: 'as', name: 'Assamese', nativeName: 'অসমীয়া' },
+    { code: 'sa', name: 'Sanskrit', nativeName: 'संस्कृतम्' },
+    ...supportedLanguages
+  ];
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Brain className="h-6 w-6" />
-        <h2 className="text-2xl font-bold">Enhanced Data Management</h2>
-        <Badge variant="secondary">AI-Powered</Badge>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Enhanced Data Manager</h2>
+          <p className="text-muted-foreground">
+            AI-powered tools for data enhancement, Q&A generation, audio creation, and translation
+          </p>
+        </div>
+        <Badge variant="secondary" className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4" />
+          AI Powered
+        </Badge>
       </div>
-      
-      <Tabs defaultValue="data-fetcher" className="space-y-4">
+
+      {progress > 0 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span>Processing...</span>
+                <span>{progress}%</span>
+              </div>
+              <Progress value={progress} className="w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Tabs defaultValue="data-fetcher" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="data-fetcher" className="flex items-center gap-2">
             <Database className="h-4 w-4" />
@@ -386,52 +411,56 @@ const AdminEnhancedDataManager = () => {
             <MessageSquare className="h-4 w-4" />
             Smart Q&A
           </TabsTrigger>
-          <TabsTrigger value="audio" className="flex items-center gap-2">
+          <TabsTrigger value="audio-generator" className="flex items-center gap-2">
             <Volume2 className="h-4 w-4" />
             Audio Generator
           </TabsTrigger>
-          <TabsTrigger value="language" className="flex items-center gap-2">
+          <TabsTrigger value="translator" className="flex items-center gap-2">
             <Languages className="h-4 w-4" />
-            Language Manager
+            Translator
           </TabsTrigger>
         </TabsList>
 
+        {/* Data Fetcher Tab */}
         <TabsContent value="data-fetcher">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5" />
-                Enhanced Data Fetcher
+                <Database className="h-5 w-5" />
+                AI Data Fetcher & Enhancer
               </CardTitle>
               <CardDescription>
-                Generate authentic, comprehensive data from real sources using AI
+                Fetch real data from internet sources and enhance your database tables with AI-generated content
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="table">Select Table</Label>
+                  <Label htmlFor="table-select">Target Table</Label>
                   <Select value={selectedTable} onValueChange={setSelectedTable}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Choose table..." />
+                      <SelectValue placeholder="Select table to enhance" />
                     </SelectTrigger>
                     <SelectContent>
                       {tables.map((table) => (
                         <SelectItem key={table.value} value={table.value}>
-                          {table.icon} {table.label}
+                          <div className="flex items-center gap-2">
+                            <span>{table.icon}</span>
+                            {table.label}
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-2">
-                  <Label htmlFor="count">Records Count</Label>
+                  <Label htmlFor="count">Number of Records</Label>
                   <Input
                     id="count"
                     type="number"
                     value={fetchCount}
-                    onChange={(e) => setFetchCount(e.target.value)}
+                    onChange={(e) => setFetchCount(parseInt(e.target.value) || 10)}
                     min="1"
                     max="50"
                   />
@@ -441,160 +470,158 @@ const AdminEnhancedDataManager = () => {
                   <Label htmlFor="language">Primary Language</Label>
                   <Select value={fetchLanguage} onValueChange={setFetchLanguage}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select language" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(supportedLanguages).map(([code, config]) => (
-                        <SelectItem key={code} value={code}>
-                          {config.nativeName} ({config.name})
+                      {languages.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {lang.nativeName} ({lang.name})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              
-              {progress > 0 && (
-                <div className="space-y-2">
-                  <Progress value={progress} />
-                  <p className="text-sm text-muted-foreground">Generating and inserting data...</p>
-                </div>
-              )}
-              
-              <Button 
-                onClick={handleEnhancedDataFetch} 
-                disabled={loading || !selectedTable}
-                className="w-full"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating Data...
-                  </>
-                ) : (
-                  <>
-                    <Download className="mr-2 h-4 w-4" />
-                    Generate & Insert Data
-                  </>
-                )}
-              </Button>
+
+              <div className="flex justify-center">
+                <Button 
+                  onClick={handleDataFetch} 
+                  disabled={loading || !selectedTable}
+                  className="w-full md:w-auto"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Fetching Data...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4 mr-2" />
+                      Fetch & Enhance Data
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* Smart Q&A Tab */}
         <TabsContent value="qa-system">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
+                <Brain className="h-5 w-5" />
                 Smart Q&A System
               </CardTitle>
               <CardDescription>
-                Generate accurate answers for spiritual questions and save to database
+                Generate answers for predefined spiritual questions or create custom Q&A pairs
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Category</Label>
+                  <Label>Question Category</Label>
                   <Select value={qaCategory} onValueChange={setQaCategory}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select category..." />
+                      <SelectValue placeholder="Select category (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="devotional">Devotional</SelectItem>
-                      <SelectItem value="philosophical">Philosophical</SelectItem>
-                      <SelectItem value="practical">Practical</SelectItem>
-                      <SelectItem value="ritual">Ritual</SelectItem>
-                      <SelectItem value="historical">Historical</SelectItem>
-                      <SelectItem value="scriptural">Scriptural</SelectItem>
+                      <SelectItem value="">All Categories</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-2">
-                  <Label>Language</Label>
+                  <Label>Response Language</Label>
                   <Select value={qaLanguage} onValueChange={setQaLanguage}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select language" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(supportedLanguages).map(([code, config]) => (
-                        <SelectItem key={code} value={code}>
-                          {config.nativeName}
+                      {languages.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {lang.nativeName} ({lang.name})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
-                <div>
-                  <Label>Pre-defined Questions</Label>
-                  <div className="grid grid-cols-1 gap-2 mt-2 max-h-32 overflow-y-auto">
-                    {predefinedQuestions.slice(0, 10).map((question, index) => (
-                      <Button
-                        key={index}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleQuestionSelect(question)}
-                        disabled={loading}
-                        className="text-left justify-start h-auto p-2"
-                      >
-                        {question}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                
                 <div className="space-y-2">
-                  <Label>Or Enter Custom Question</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={customQuestion}
-                      onChange={(e) => setCustomQuestion(e.target.value)}
-                      placeholder="Enter your spiritual question..."
-                      disabled={loading}
-                    />
-                    <Button onClick={handleCustomQuestion} disabled={loading || !customQuestion.trim()}>
-                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Ask'}
-                    </Button>
+                  <Label>Predefined Questions</Label>
+                  <Select value={selectedQuestion} onValueChange={setSelectedQuestion}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose from predefined questions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredQuestions.map((q) => (
+                        <SelectItem key={q.id} value={q.question}>
+                          <div className="text-left">
+                            <div className="font-medium">{q.question.substring(0, 60)}...</div>
+                            <div className="text-xs text-muted-foreground">{q.category}</div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="text-center text-sm text-muted-foreground">OR</div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="custom-question">Custom Question</Label>
+                  <Textarea
+                    id="custom-question"
+                    placeholder="Enter your custom spiritual question here..."
+                    value={customQuestion}
+                    onChange={(e) => setCustomQuestion(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              {generatedAnswer && (
+                <div className="space-y-2">
+                  <Label>Generated Answer</Label>
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm">{generatedAnswer}</p>
                   </div>
                 </div>
-                
-                {generatedAnswer && (
-                  <div className="space-y-2">
-                    <Label>Generated Answer</Label>
-                    <Textarea
-                      value={generatedAnswer}
-                      onChange={(e) => setGeneratedAnswer(e.target.value)}
-                      rows={6}
-                      className="font-mono text-sm"
-                    />
-                    <div className="flex gap-2">
-                      <Button onClick={handleSaveQA} disabled={loading}>
-                        {loading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Saving...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Save to Database
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                )}
+              )}
+
+              <div className="flex justify-center">
+                <Button 
+                  onClick={handleQuestionGeneration} 
+                  disabled={loading || (!selectedQuestion && !customQuestion.trim())}
+                  className="w-full md:w-auto"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Generating Answer...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Generate & Save Answer
+                    </>
+                  )}
+                </Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="audio">
+        {/* Audio Generator Tab */}
+        <TabsContent value="audio-generator">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -602,140 +629,139 @@ const AdminEnhancedDataManager = () => {
                 Audio Generator
               </CardTitle>
               <CardDescription>
-                Convert text to high-quality speech using AI voices
+                Convert text to high-quality audio with multiple voice options
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Voice Selection</Label>
-                <Select value={selectedVoice} onValueChange={setSelectedVoice}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(availableVoices).map(([voice, config]) => (
-                      <SelectItem key={voice} value={voice}>
-                        {voice} ({config.gender}, {config.style})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Text to Convert</Label>
-                <Textarea
-                  value={audioText}
-                  onChange={(e) => setAudioText(e.target.value)}
-                  placeholder="Enter text to convert to audio..."
-                  rows={4}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Characters: {audioText.length} (Recommended: 100-1000 characters)
-                </p>
-              </div>
-              
-              {progress > 0 && (
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Progress value={progress} />
-                  <p className="text-sm text-muted-foreground">Generating audio...</p>
+                  <Label htmlFor="audio-text">Text to Convert</Label>
+                  <Textarea
+                    id="audio-text"
+                    placeholder="Enter the text you want to convert to audio..."
+                    value={audioText}
+                    onChange={(e) => setAudioText(e.target.value)}
+                    rows={4}
+                  />
                 </div>
-              )}
-              
-              <Button 
-                onClick={handleGenerateAudio} 
-                disabled={loading || !audioText.trim()}
-                className="w-full"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating Audio...
-                  </>
-                ) : (
-                  <>
-                    <Volume2 className="mr-2 h-4 w-4" />
-                    Generate & Play Audio
-                  </>
-                )}
-              </Button>
+
+                <div className="space-y-2">
+                  <Label>Voice Selection</Label>
+                  <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select voice" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {voices.map((voice) => (
+                        <SelectItem key={voice.voice_id} value={voice.voice_id}>
+                          {voice.name} {voice.gender && voice.style && `(${voice.gender}, ${voice.style})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex justify-center">
+                <Button 
+                  onClick={handleAudioGeneration} 
+                  disabled={loading || !audioText.trim()}
+                  className="w-full md:w-auto"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Generating Audio...
+                    </>
+                  ) : (
+                    <>
+                      <Volume2 className="h-4 w-4 mr-2" />
+                      Generate Audio
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="language">
+        {/* Translator Tab */}
+        <TabsContent value="translator">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
-                Language Manager
+                <Languages className="h-5 w-5" />
+                Multi-Language Translator
               </CardTitle>
               <CardDescription>
-                Translate content to multiple languages and manage multilingual data
+                Translate content between multiple Indian and international languages
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Source Language</Label>
                   <Select value={sourceLanguage} onValueChange={setSourceLanguage}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select source language" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(supportedLanguages).map(([code, config]) => (
-                        <SelectItem key={code} value={code}>
-                          {config.nativeName} ({config.name})
+                      {languages.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {lang.nativeName} ({lang.name})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label>Target Language</Label>
                   <Select value={targetLanguage} onValueChange={setTargetLanguage}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select target language" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(supportedLanguages).map(([code, config]) => (
-                        <SelectItem key={code} value={code}>
-                          {config.nativeName} ({config.name})
+                      {languages.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {lang.nativeName} ({lang.name})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
-                <Label>Text to Translate</Label>
+                <Label htmlFor="translate-text">Text to Translate</Label>
                 <Textarea
+                  id="translate-text"
+                  placeholder="Enter the text you want to translate..."
                   value={translateText}
                   onChange={(e) => setTranslateText(e.target.value)}
-                  placeholder="Enter text to translate..."
                   rows={4}
                 />
               </div>
-              
-              <Button 
-                onClick={handleTranslate} 
-                disabled={loading || !translateText.trim() || !targetLanguage}
-                className="w-full"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Translating...
-                  </>
-                ) : (
-                  <>
-                    <Languages className="mr-2 h-4 w-4" />
-                    Translate Text
-                  </>
-                )}
-              </Button>
+
+              <div className="flex justify-center">
+                <Button 
+                  onClick={handleTranslation} 
+                  disabled={loading || !translateText.trim() || sourceLanguage === targetLanguage}
+                  className="w-full md:w-auto"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Translating...
+                    </>
+                  ) : (
+                    <>
+                      <Languages className="h-4 w-4 mr-2" />
+                      Translate Text
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -744,4 +770,4 @@ const AdminEnhancedDataManager = () => {
   );
 };
 
-export default AdminEnhancedDataManager;
+export { AdminEnhancedDataManager };

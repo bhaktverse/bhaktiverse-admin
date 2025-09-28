@@ -15,6 +15,7 @@ import { AdminUserManagement } from "@/components/admin/AdminUserManagement";
 import { AdminDataImport } from "@/components/admin/AdminDataImport";
 import { AdminAITools } from "@/components/admin/AdminAITools";
 import { AdminDatabaseAI } from "@/components/admin/AdminDatabaseAI";
+import { AdminEnhancedDataManager } from "@/components/admin/AdminEnhancedDataManager";
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -30,7 +31,7 @@ const Admin = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:grid-cols-13">
+          <TabsList className="grid w-full grid-cols-6 lg:grid-cols-14">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -82,6 +83,10 @@ const Admin = () => {
             <TabsTrigger value="ai-tools" className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
               <span className="hidden sm:inline">AI Tools</span>
+            </TabsTrigger>
+            <TabsTrigger value="enhanced-data" className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              <span className="hidden sm:inline">Enhanced Data</span>
             </TabsTrigger>
           </TabsList>
 
@@ -135,6 +140,10 @@ const Admin = () => {
 
           <TabsContent value="ai-tools" className="space-y-6">
             <AdminAITools />
+          </TabsContent>
+
+          <TabsContent value="enhanced-data" className="space-y-6">
+            <AdminEnhancedDataManager />
           </TabsContent>
         </Tabs>
       </div>
