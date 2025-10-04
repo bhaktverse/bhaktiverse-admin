@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Edit, Eye, Search, Filter, Calendar, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { FileUpload } from "./FileUpload";
 
 export const AdminSaints = () => {
   const [saints, setSaints] = useState([]);
@@ -172,12 +173,20 @@ export const AdminSaints = () => {
                 </div>
               </div>
               <div>
-                <Label htmlFor="image_url">Image URL</Label>
+                <FileUpload
+                  bucket="saints-images"
+                  path="saints/"
+                  accept="image/*"
+                  maxSize={5}
+                  label="Saint Image"
+                  currentFile={formData.image_url}
+                  onUploadComplete={(url) => setFormData({ ...formData, image_url: url })}
+                />
                 <Input
-                  id="image_url"
+                  className="mt-2"
                   value={formData.image_url}
                   onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
+                  placeholder="Or enter image URL manually"
                 />
               </div>
               <div>

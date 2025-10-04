@@ -16,6 +16,7 @@ import { AdminDataImport } from "@/components/admin/AdminDataImport";
 import { AdminAITools } from "@/components/admin/AdminAITools";
 import { AdminDatabaseAI } from "@/components/admin/AdminDatabaseAI";
 import { AdminEnhancedDataManager } from "@/components/admin/AdminEnhancedDataManager";
+import { AdminAudioLibrary } from "@/components/admin/AdminAudioLibrary";
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -31,7 +32,7 @@ const Admin = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:grid-cols-14">
+          <TabsList className="grid w-full grid-cols-6 lg:grid-cols-15">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -44,13 +45,13 @@ const Admin = () => {
               <Database className="h-4 w-4" />
               <span className="hidden sm:inline">Saints</span>
             </TabsTrigger>
-            <TabsTrigger value="database-ai" className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
-              <span className="hidden sm:inline">AI DB</span>
-            </TabsTrigger>
             <TabsTrigger value="scriptures" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
               <span className="hidden sm:inline">Scriptures</span>
+            </TabsTrigger>
+            <TabsTrigger value="audio" className="flex items-center gap-2">
+              <Music className="h-4 w-4" />
+              <span className="hidden sm:inline">Audio</span>
             </TabsTrigger>
             <TabsTrigger value="temples" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
@@ -84,9 +85,13 @@ const Admin = () => {
               <Sparkles className="h-4 w-4" />
               <span className="hidden sm:inline">AI Tools</span>
             </TabsTrigger>
+            <TabsTrigger value="database-ai" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              <span className="hidden sm:inline">AI DB</span>
+            </TabsTrigger>
             <TabsTrigger value="enhanced-data" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
-              <span className="hidden sm:inline">Enhanced Data</span>
+              <span className="hidden sm:inline">Enhanced</span>
             </TabsTrigger>
           </TabsList>
 
@@ -108,6 +113,10 @@ const Admin = () => {
 
           <TabsContent value="scriptures" className="space-y-6">
             <AdminScriptures />
+          </TabsContent>
+
+          <TabsContent value="audio" className="space-y-6">
+            <AdminAudioLibrary />
           </TabsContent>
 
           <TabsContent value="temples" className="space-y-6">

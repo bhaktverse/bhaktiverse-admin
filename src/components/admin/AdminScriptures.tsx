@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Book, Plus, Edit, Trash2 } from "lucide-react";
+import { FileUpload } from "./FileUpload";
 
 export const AdminScriptures = () => {
   const { toast } = useToast();
@@ -274,22 +275,41 @@ export const AdminScriptures = () => {
                     min="1"
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">PDF URL</label>
-                  <Input
-                    value={formData.pdf_url}
-                    onChange={(e) => setFormData({ ...formData, pdf_url: e.target.value })}
-                    placeholder="https://..."
-                  />
-                </div>
               </div>
               
               <div>
-                <label className="text-sm font-medium">Audio URL</label>
+                <FileUpload
+                  bucket="scriptures-pdfs"
+                  path="pdfs/"
+                  accept=".pdf,application/pdf"
+                  maxSize={50}
+                  label="Scripture PDF"
+                  currentFile={formData.pdf_url}
+                  onUploadComplete={(url) => setFormData({ ...formData, pdf_url: url })}
+                />
                 <Input
+                  className="mt-2"
+                  value={formData.pdf_url}
+                  onChange={(e) => setFormData({ ...formData, pdf_url: e.target.value })}
+                  placeholder="Or enter PDF URL manually"
+                />
+              </div>
+              
+              <div>
+                <FileUpload
+                  bucket="scriptures-audio"
+                  path="audio/"
+                  accept="audio/*"
+                  maxSize={100}
+                  label="Scripture Audio"
+                  currentFile={formData.audio_url}
+                  onUploadComplete={(url) => setFormData({ ...formData, audio_url: url })}
+                />
+                <Input
+                  className="mt-2"
                   value={formData.audio_url}
                   onChange={(e) => setFormData({ ...formData, audio_url: e.target.value })}
-                  placeholder="https://..."
+                  placeholder="Or enter audio URL manually"
                 />
               </div>
 
