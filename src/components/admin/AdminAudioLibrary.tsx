@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Music, Plus, Edit, Trash2, Play, Download } from "lucide-react";
 import { FileUpload } from "./FileUpload";
+import { AudioPlayer } from "./AudioPlayer";
 
 export const AdminAudioLibrary = () => {
   const { toast } = useToast();
@@ -18,6 +19,8 @@ export const AdminAudioLibrary = () => {
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [currentlyPlaying, setCurrentlyPlaying] = useState<any>(null);
+  const [currentIndex, setCurrentIndex] = useState<number>(-1);
   const [formData, setFormData] = useState({
     title: "",
     artist: "",
@@ -143,6 +146,27 @@ export const AdminAudioLibrary = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handlePlay = (item: any, index: number) => {
+    setCurrentlyPlaying(item);
+    setCurrentIndex(index);
+  };
+
+  const handleNext = () => {
+    if (currentIndex < audioItems.length - 1) {
+      const nextIndex = currentIndex + 1;
+      setCurrentlyPlaying(audioItems[nextIndex]);
+      setCurrentIndex(nextIndex);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentIndex > 0) {
+      const prevIndex = currentIndex - 1;
+      setCurrentlyPlaying(audioItems[prevIndex]);
+      setCurrentIndex(prevIndex);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -153,6 +177,17 @@ export const AdminAudioLibrary = () => {
         <CardDescription>Manage mantras, bhajans, aartis, and spiritual audio</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {currentlyPlaying && (
+          <AudioPlayer
+            audioUrl={currentlyPlaying.audio_url}
+            title={currentlyPlaying.title}
+            artist={currentlyPlaying.artist}
+            onNext={currentIndex < audioItems.length - 1 ? handleNext : undefined}
+            onPrevious={currentIndex > 0 ? handlePrevious : undefined}
+            autoPlay={true}
+          />
+        )}
+
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => {
@@ -333,9 +368,9 @@ export const AdminAudioLibrary = () => {
                     <div className="flex gap-2">
                       {item.audio_url && (
                         <Button
-                          variant="outline"
+                          variant={currentlyPlaying?.id === item.id ? "default" : "outline"}
                           size="sm"
-                          onClick={() => window.open(item.audio_url, '_blank')}
+                          onClick={() => handlePlay(item, audioItems.indexOf(item))}
                         >
                           <Play className="h-4 w-4" />
                         </Button>
