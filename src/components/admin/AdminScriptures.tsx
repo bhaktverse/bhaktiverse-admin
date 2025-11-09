@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,10 +10,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Book, Plus, Edit, Trash2 } from "lucide-react";
+import { Book, Plus, Edit, Trash2, BookOpen } from "lucide-react";
 import { FileUpload } from "./FileUpload";
 
 export const AdminScriptures = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [scriptures, setScriptures] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -346,6 +348,14 @@ export const AdminScriptures = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => navigate(`/scriptures/${scripture.id}`)}
+                        title="Read Scripture"
+                      >
+                        <BookOpen className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
