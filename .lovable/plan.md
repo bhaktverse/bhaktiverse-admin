@@ -1,126 +1,122 @@
 
-# Comprehensive Database Enhancement Plan - Phase 4
-## Complete Audit Results & Data Upgrade
+
+# Phase 5: Deep Database Audit & Enhancement Plan
 
 ---
 
-## Current Database Audit Results
+## Audit Results Summary
 
-### Table Counts & Issues
+### Critical Issue: Massive Temple Duplicates
+The temples table has **44 records but only ~25 unique temples**. Multiple duplicates found:
 
-| Table | Count | Critical Issues |
-|-------|-------|----------------|
-| saints | 43 | 4 missing images, 7 have biographies under 200 chars |
-| scriptures | 23 | **16 scriptures have ZERO chapters** |
-| scripture_chapters | 50 | 17 chapters have content under 500 chars (too thin) |
-| temples | 45 | 9 missing live darshan URLs, 4 missing tradition |
-| mantras_library | 37 | **ALL 37 have NULL audio_url**, 13 missing pronunciation |
-| audio_library | 55 | **14 still have placeholder URLs** (example.com/soundhelix) |
-| bhakti_shorts | 23 | **3 placeholder YouTube URLs** |
-| spiritual_content | 16 | **ALL are duplicates** (8 unique x 2), avg 64 chars |
-| spiritual_faqs | 65 | Good |
-| calendar_events | 90 | Good |
+| Temple | Duplicate Count |
+|--------|----------------|
+| Badrinath Temple | 3 entries |
+| Golden Temple | 3 entries |
+| Somnath Temple | 3 entries |
+| Vaishno Devi Temple | 3 entries |
+| Jagannath Temple | 3 entries |
+| Meenakshi Amman Temple | 3 entries |
+| Kashi Vishwanath Temple | 2 entries |
+| Kedarnath Temple | 2 entries |
+| Siddhivinayak Temple | 2 entries |
+| Shirdi Sai Baba Temple | 2 entries |
+| Padmanabhaswamy Temple | 2 entries |
+| Mahakaleshwar Temple | 2 entries |
+| Tirumala Temple | 2 entries |
 
----
+4 temples have descriptions under 100 characters (too thin for SEO).
 
-## Critical Fixes Required
+### Saints: 10 with Short Biographies (<300 chars)
+- Lahiri Mahasaya (209 chars)
+- Nisargadatta Maharaj (212 chars)
+- Samarth Ramdas (213 chars)
+- Paramahansa Yogananda (232 chars)
+- Chaitanya Mahaprabhu (237 chars)
+- Sri Aurobindo (239 chars)
+- Adi Shankaracharya (257 chars)
+- Swami Sivananda (268 chars)
+- Swami Chinmayananda (280 chars)
+- Shirdi Sai Baba (291 chars)
 
-### 1. Audio Library - 14 Broken Tracks (HIGHEST PRIORITY)
-These tracks use `example.com` or `soundhelix.com` URLs and produce errors:
+### Scriptures: 10 with ZERO Chapters
+- Autobiography of a Yogi, Devi Bhagavata Purana, Guru Granth Sahib, Shrimad Bhagavatam, Vishnu Purana
+- Hindi duplicates: उपनिषद्, कबीर दोहावली, योगसूत्र, श्रीमद्भगवद्गीता, श्रीमद्भागवतम्
 
-| Title | Current URL (Broken) |
-|-------|---------------------|
-| Achyutam Keshavam Krishna Damodaram | example.com |
-| Aigiri Nandini (Mahishasura Mardini) | example.com |
-| Durga Chalisa | soundhelix.com |
-| Inner Peace Meditation | soundhelix.com |
-| Krishna Bhajans | soundhelix.com |
-| Lakshmi Aarti | soundhelix.com |
-| Om Jai Jagdish Hare Aarti | example.com |
-| Saraswati Vandana | soundhelix.com |
-| Shanti Mantra | soundhelix.com |
-| Shiv Tandav Stotram (x2) | example.com + soundhelix |
-| Shri Ramchandra Kripalu | example.com |
-| Suryashtakam | example.com |
-| Vishnu Sahasranamam | soundhelix.com |
+### Scripture Chapters: 11 Under 800 Characters
+Thin content in Yoga Sutras padas, Ramayana Kandas (Hindi), and Katha Upanishad.
 
-**Fix:** Replace ALL 14 with working Archive.org URLs for real devotional audio.
+### Mantras: 8 Still Missing Audio URLs
 
-### 2. Mantras Library - All 37 Have NULL Audio URLs
-Every single mantra has `audio_url = NULL`. Need to add working Archive.org audio links to at least 20 key mantras.
-
-### 3. Bhakti Shorts - 3 Placeholder URLs
-Replace example1/example2/example3 with real YouTube shorts.
-
-### 4. Spiritual Content - Duplicates & Thin Content
-16 records = 8 duplicates. Remove duplicates and expand remaining with 500+ char bilingual content.
-
-### 5. 16 Scriptures Have ZERO Chapters
-Major scriptures like Sundara Kanda, Vivekachudamani, Narada Bhakti Sutras, Shiva Purana, Bhaja Govindam, Ashtavakra Gita have no chapters at all.
-
-### 6. 17 Scripture Chapters Have Content Under 500 Chars
-Ramayana Kandas, Upanishads, and Yoga Sutras chapters are very thin (350-460 chars). Need bilingual expansion.
-
-### 7. 7 Saints With Short Biographies
-Nisargadatta Maharaj (115 chars), Samarth Ramdas (124 chars), etc. need detailed bilingual bios.
+### FAQs: Festivals category underrepresented (only 6)
 
 ---
 
 ## Implementation Plan
 
-### Migration 1: Fix All 14 Broken Audio Library URLs
-Replace every `example.com` and `soundhelix.com` URL with real, working Archive.org audio files. These are verified public domain audio collections on Archive.org with actual devotional content.
+### Operation 1: Temple Deduplication and Enhancement
+- **Delete ~19 duplicate temple records** (keep the most detailed version of each)
+- **Expand 4 thin temple descriptions** to 300+ chars with bilingual content, history, architecture details, and SEO-rich information
+- **Add 8 new major temples** not yet in the database:
+  - Koneshwar Temple, Trincomalee
+  - Pashupatinath Temple, Kathmandu
+  - Prambanan Temple, Indonesia
+  - Angkor Wat, Cambodia
+  - Sun Temple, Modhera
+  - Virupaksha Temple, Hampi (enhanced)
+  - Ranganathaswamy Temple, Srirangam
+  - Sabrimala Ayyappa Temple, Kerala
+- Each temple with full SEO data: 500+ char description, history, visiting_hours, facilities, live_darshan_url
 
-### Migration 2: Add Audio URLs to 20+ Key Mantras
-Update mantras_library with working Archive.org audio URLs for Gayatri, Om Namah Shivaya, Mahamrityunjaya, Hare Krishna, Navagraha mantras, etc.
+### Operation 2: Saints Biography Enhancement
+- **Update 10 saints** with 500+ character bilingual biographies (Hindi + English)
+- Include birth/death details, major works, key teachings, samadhi location
+- Add famous_quotes JSON arrays with 3-5 authentic quotes each
 
-### Migration 3: Fix 3 Bhakti Shorts + Clean Spiritual Content
-- Replace 3 placeholder YouTube URLs with real verified shorts
-- Delete 8 duplicate spiritual_content records
-- Expand remaining 8 records with detailed bilingual content (500+ chars)
+### Operation 3: Scripture Chapter Expansion
+- **Add chapters for 5 scriptures** currently at zero (skip Hindi duplicates which mirror English versions):
+  - Devi Bhagavata Purana (5 key sections)
+  - Vishnu Purana (5 key sections)  
+  - Shrimad Bhagavatam (5 key skandhas)
+  - Kabir Dohavali (4 sections with 50+ dohas)
+  - Autobiography of a Yogi (5 key chapters)
+- **Enhance 11 thin chapters** to 1500+ chars with full Sanskrit/Hindi/English content
+- Remove 5 Hindi duplicate scripture records that mirror existing English entries
 
-### Migration 4: Add Chapters for 6 Major Scriptures
-Add bilingual chapters for:
-- **Sundara Kanda** (6 sections)
-- **Vivekachudamani** (4 sections)
-- **Bhaja Govindam** (complete 31 verses)
-- **Narada Bhakti Sutras** (4 chapters)
-- **Ashtavakra Gita** (4 key chapters)
-- **Shiva Purana** (5 key sections)
+### Operation 4: Mantras Audio + New Mantras
+- **Fix 8 mantras** still missing audio_url with Archive.org links
+- **Add 10 new mantras** with full pronunciation, meaning, benefits, and audio:
+  - Durga Beej Mantra, Saraswati Mantra, Hanuman Mantra
+  - Narsimha Mantra, Sudarshana Mantra, Dhanvantari Mantra
+  - Santana Gopala Mantra, Annapurna Mantra
+  - Dattatreya Mantra, Kartikeya Mantra
 
-Each with full Sanskrit/Hindi text + English translation format.
-
-### Migration 5: Enhance Thin Scripture Chapters
-Update 17 chapters (Ramayana Kandas, Upanishads, Yoga Sutras) from ~400 chars to 1500+ chars with:
-- Original Sanskrit shlokas
-- Hindi translation
-- English translation
-- Key teachings
-
-### Migration 6: Enhance 7 Saints + Fix 4 Missing Images
-- Expand biographies for Nisargadatta, Samarth Ramdas, Mata Amritanandamayi, Shirdi Sai Baba, Anandamayi Ma, Chaitanya Mahaprabhu, Sant Ravidas
-- Add Wikimedia Commons image URLs for 4 saints without images
-
-### Migration 7: Fix 9 Temples Missing Data
-- Add live darshan URLs for 9 temples
-- Fix 4 temples missing tradition field
-- Remove duplicate Kedarnath entry
+### Operation 5: FAQs and Spiritual Content
+- **Add 20 new FAQs** focusing on underrepresented categories:
+  - festivals: +8 (Holi, Diwali details, Navratri rituals, Chhath, Onam, Pongal, Baisakhi, Maha Shivaratri)
+  - mantras: +6 (how to do japa, mala usage, timing, pronunciation rules)
+  - yoga: +6 (new category - asanas, pranayama, yoga types)
 
 ---
 
-## Expected Results After Enhancement
+## Technical Details
 
-| Table | Before | After | Key Fix |
-|-------|--------|-------|---------|
-| audio_library | 55 (14 broken) | 55 (0 broken) | All URLs working |
-| mantras_library | 37 (0 audio) | 37 (20+ audio) | Real audio added |
-| bhakti_shorts | 23 (3 broken) | 23 (0 broken) | Real YouTube URLs |
-| spiritual_content | 16 (8 dupes) | 8 (expanded) | No dupes, rich content |
-| scripture_chapters | 50 (17 thin) | 80+ (all rich) | +30 new, 17 enhanced |
-| saints | 43 (7 thin, 4 no img) | 43 (all complete) | Full bios + images |
-| temples | 45 (9 no darshan) | 44 (complete) | 1 dupe removed, all URLs |
+All operations will use the Supabase insert tool (data operations, not schema changes):
+- DELETE for duplicate removal
+- UPDATE for content enhancement
+- INSERT for new records
 
-### Audio Fix Summary:
-- **14 broken audio_library tracks** - all fixed with Archive.org
-- **37 mantras with no audio** - 20+ get real audio
-- **0 placeholder URLs remaining** across entire database
+No schema migrations needed -- all tables already have the correct structure.
+
+## Expected Results
+
+| Table | Before | After | Change |
+|-------|--------|-------|--------|
+| temples | 44 (19 dupes) | 33 (0 dupes, +8 new) | Clean + enriched |
+| saints | 43 (10 thin) | 43 (all 500+ chars) | All bios enhanced |
+| scriptures | 23 (5 Hindi dupes) | 18 (clean) | Dupes removed |
+| scripture_chapters | 77 (11 thin) | 102 (all rich) | +25 new, 11 enhanced |
+| mantras_library | 37 (8 no audio) | 47 (all with audio) | +10 new mantras |
+| spiritual_faqs | 65 | 85 | +20 new FAQs |
+| audio_library | 55 | 55 (all working) | Archive.org verified |
+
